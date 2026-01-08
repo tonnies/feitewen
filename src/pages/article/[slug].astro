@@ -38,7 +38,7 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
 
     <!-- Article Header -->
     <article class="border-4 border-black bg-white brutalist-shadow">
-      <header class="p-8 border-b-4 border-black bg-[--color-cream-dark]">
+      <header class="p-8 border-b-4 border-black bg-yellow-100">
         <!-- Topics -->
         {article.topics.length > 0 && (
           <div class="flex flex-wrap gap-2 mb-6">
@@ -76,16 +76,6 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
           </p>
         )}
       </header>
-
-      <!-- Why It Matters -->
-      {article.whyItMatters && (
-        <div class="p-8 bg-yellow-100 border-b-4 border-black">
-          <h2 class="text-sm uppercase font-bold mb-3">Why It Matters:</h2>
-          <p class="text-base leading-relaxed">
-            {article.whyItMatters}
-          </p>
-        </div>
-      )}
 
       <!-- Article Content -->
       <div class="p-8">
