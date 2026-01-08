@@ -3,8 +3,8 @@
 ## Content Display & Layout
 
 ### Article Cards
-- [ ] Fix card content to display: Topic, Headline, Date, and Excerpt
-- [ ] Remove "Why It Matters" from article cards
+- [x] Fix card content to display: Topic, Headline, Date, and Excerpt
+- [x] Remove "Why It Matters" from article cards
 - [ ] Add cover image to cards (pulled from Notion database)
   - [ ] Create new "Cover Image" property in Notion database
 
