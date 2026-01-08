@@ -16,6 +16,7 @@ export interface Article {
   whyItMatters: string;
   status: string;
   content: any;
+  coverImage?: string;
 }
 
 // Get environment variables
@@ -220,6 +221,28 @@ function extractArticleData(page: any): Article {
     status = properties.Status.status.name;
   }
 
+  // Extract cover image
+  let coverImage: string | undefined = undefined;
+
+  // First, try to get from "Cover Image" property (files type)
+  if (properties["Cover Image"]?.type === "files" && properties["Cover Image"].files?.length > 0) {
+    const file = properties["Cover Image"].files[0];
+    if (file.type === "external") {
+      coverImage = file.external?.url;
+    } else if (file.type === "file") {
+      coverImage = file.file?.url;
+    }
+  }
+
+  // Fallback to page cover if property not found
+  if (!coverImage && page.cover) {
+    if (page.cover.type === "external") {
+      coverImage = page.cover.external?.url;
+    } else if (page.cover.type === "file") {
+      coverImage = page.cover.file?.url;
+    }
+  }
+
   return {
     id: page.id,
     title,
@@ -231,6 +254,7 @@ function extractArticleData(page: any): Article {
     whyItMatters,
     status,
     content: null,
+    coverImage,
   };
 }
 
