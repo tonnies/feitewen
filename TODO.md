@@ -15,7 +15,7 @@
 - [ ] Each topic section should have its own heading
 
 ### Article Page
-- [ ] Remove "Why It Matters" section from article pages
+- [x] Remove "Why It Matters" section from article pages
 - [ ] Add "Read More" section showing three recent articles from the same topic
 - [ ] Fix video embeds from Notion (currently not working on frontend)
 
