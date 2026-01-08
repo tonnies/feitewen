@@ -54,13 +54,13 @@ if (topic) {
 <Layout title="Feite Wen - South African News">
   <Header topics={TOPICS} currentTopic={topic} client:load />
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
     {topic ? (
       /* Filtered Topic View */
       <>
         <!-- Page Header -->
-        <div class="mb-12">
-          <h1 class="text-5xl font-bold uppercase mb-4">
+        <div class="mb-8 sm:mb-12">
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase mb-4 break-words">
             {topic} News
           </h1>
           <div class="h-2 w-32 bg-black"></div>
@@ -69,7 +69,7 @@ if (topic) {
         <!-- Articles Grid -->
         {articles.length > 0 ? (
           <>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12">
               {articles.map((article) => (
                 <ArticleCard
                   title={article.title}
@@ -107,14 +107,14 @@ if (topic) {
       /* Homepage with Featured and Topic Sections */
       <>
         <!-- Featured Section -->
-        <section class="mb-20">
-          <div class="mb-12">
-            <h2 class="text-5xl font-bold uppercase mb-4">Featured</h2>
+        <section class="mb-12 sm:mb-20">
+          <div class="mb-8 sm:mb-12">
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase mb-4">Featured</h2>
             <div class="h-2 w-32 bg-black"></div>
           </div>
 
           {featuredArticles.length > 0 ? (
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {featuredArticles.map((article) => (
                 <ArticleCard
                   title={article.title}
@@ -133,21 +133,21 @@ if (topic) {
 
         <!-- Topic Sections -->
         {topicSections.map((section) => (
-          <section class="mb-20">
-            <div class="mb-8 flex items-center justify-between">
-              <div>
-                <h2 class="text-4xl font-bold uppercase mb-4">{section.topic}</h2>
-                <div class="h-2 w-24 bg-black"></div>
+          <section class="mb-12 sm:mb-20">
+            <div class="mb-6 sm:mb-8 flex items-center justify-between gap-4">
+              <div class="min-w-0 flex-1">
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase mb-4 break-words">{section.topic}</h2>
+                <div class="h-2 w-20 sm:w-24 bg-black"></div>
               </div>
               <a
                 href={`/?topic=${encodeURIComponent(section.topic)}`}
-                class="px-4 py-2 border-2 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-sm"
+                class="flex-shrink-0 px-3 py-2 sm:px-4 border-2 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-xs sm:text-sm whitespace-nowrap"
               >
                 View All →
               </a>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {section.articles.map((article) => (
                 <ArticleCard
                   title={article.title}

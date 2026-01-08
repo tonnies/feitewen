@@ -28,7 +28,7 @@ export default function ArticleCard({
     >
       <article
         className={cn(
-          "h-full border-4 border-black bg-white p-6",
+          "h-full border-4 border-black bg-white p-4 sm:p-6",
           "brutalist-shadow brutalist-hover"
         )}
       >
@@ -38,7 +38,7 @@ export default function ArticleCard({
             {topics.map((topic) => (
               <span
                 key={topic}
-                className="px-3 py-1 border-2 border-black bg-[--color-cream] text-xs uppercase font-bold"
+                className="px-2 py-1 border-2 border-black bg-[--color-cream] text-xs uppercase font-bold break-words"
               >
                 {topic}
               </span>
@@ -47,7 +47,7 @@ export default function ArticleCard({
         )}
 
         {/* Title */}
-        <h2 className="text-2xl font-bold uppercase mb-3 leading-tight">
+        <h2 className="text-xl sm:text-2xl font-bold uppercase mb-3 leading-tight break-words">
           {title}
         </h2>
 
@@ -58,7 +58,7 @@ export default function ArticleCard({
 
         {/* Excerpt */}
         {excerpt && (
-          <p className="text-sm leading-relaxed mb-4">
+          <p className="text-sm leading-relaxed mb-4 break-words">
             {excerpt}
           </p>
         )}
