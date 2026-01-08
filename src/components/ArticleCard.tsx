@@ -6,7 +6,6 @@ interface ArticleCardProps {
   publishDate: string;
   topics: string[];
   slug: string;
-  whyItMatters?: string;
 }
 
 export default function ArticleCard({
@@ -15,7 +14,6 @@ export default function ArticleCard({
   publishDate,
   topics,
   slug,
-  whyItMatters,
 }: ArticleCardProps) {
   const formattedDate = new Date(publishDate).toLocaleDateString("en-US", {
     year: "numeric",
@@ -63,16 +61,6 @@ export default function ArticleCard({
           <p className="text-sm leading-relaxed mb-4">
             {excerpt}
           </p>
-        )}
-
-        {/* Why It Matters */}
-        {whyItMatters && (
-          <div className="border-t-2 border-black pt-4">
-            <p className="text-xs uppercase font-bold mb-2">Why It Matters:</p>
-            <p className="text-sm leading-relaxed">
-              {whyItMatters}
-            </p>
-          </div>
         )}
 
         {/* Read More */}
