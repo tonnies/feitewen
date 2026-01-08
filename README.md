@@ -41,7 +41,7 @@ Create a `.env` file in the root directory:
 
 ```env
 NOTION_API_KEY=your_notion_api_key
-NOTION_DATABASE_ID=2e12d00c-e384-80a9-a895-f2efbe619de9
+NOTION_DATABASE_ID=your_notion_database_id
 ```
 
 ### 4. Notion Setup
