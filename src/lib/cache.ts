@@ -4,7 +4,7 @@
  */
 
 const CACHE_NAME = 'notion-cache';
-const CACHE_TTL = 40 * 60 * 1000; // 40 minutes in milliseconds
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes in milliseconds - ensures near-instant updates
 
 export interface CacheEntry<T> {
   data: T;
