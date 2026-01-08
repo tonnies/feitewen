@@ -9,10 +9,10 @@
   - [ ] Create new "Cover Image" property in Notion database
 
 ### Homepage Sections
-- [ ] Change "Latest News" to "Featured"
-- [ ] Display only the latest three stories in Featured section (based on publish date)
-- [ ] Add topic-specific sections after Featured (Politics, Crime, Economics, etc.)
-- [ ] Each topic section should have its own heading
+- [x] Change "Latest News" to "Featured"
+- [x] Display only the latest three stories in Featured section (based on publish date)
+- [x] Add topic-specific sections after Featured (Politics, Crime, Economics, etc.)
+- [x] Each topic section should have its own heading
 
 ### Article Page
 - [x] Remove "Why It Matters" section from article pages
