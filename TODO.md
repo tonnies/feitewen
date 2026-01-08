@@ -20,7 +20,7 @@
 - [ ] Fix video embeds from Notion (currently not working on frontend)
 
 ## Styling & Design
-- [ ] Fix mobile view
+- [x] Fix mobile view
 - [ ] Add colour to article tags (pull colours from Notion database)
   - [ ] Create new property in Notion database for tag colours
 - [ ] Add Feitewen logo
