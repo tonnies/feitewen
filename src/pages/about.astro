@@ -1,0 +1,58 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header';
+import { TOPICS } from '../lib/notion-fetch';
+---
+
+<Layout title="About - Feite Wen" description="About Feite Wen">
+  <Header topics={TOPICS} client:load />
+
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Page Header -->
+    <div class="mb-12">
+      <h1 class="text-5xl font-bold uppercase mb-4">About Feite Wen</h1>
+      <div class="h-2 w-32 bg-black"></div>
+    </div>
+
+    <!-- About Content -->
+    <div class="border-4 border-black bg-white brutalist-shadow p-8">
+      <div class="prose prose-lg max-w-none">
+        <p class="text-xl leading-relaxed mb-6">
+          Content coming soon.
+        </p>
+
+        <p class="leading-relaxed mb-6">
+          This section will contain information about Feite Wen, our mission, our team, and how we cover South African news.
+        </p>
+
+        <div class="mt-12 pt-8 border-t-4 border-black">
+          <h2 class="text-2xl font-bold uppercase mb-4">Contact</h2>
+          <p class="leading-relaxed">
+            For inquiries, please check back soon for contact information.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-12">
+      <a
+        href="/"
+        class="inline-block px-6 py-3 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold"
+      >
+        ← Back to Home
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t-4 border-black bg-[--color-cream-dark] mt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="text-center">
+        <p class="text-sm uppercase font-bold">
+          © {new Date().getFullYear()} Feite Wen. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+</Layout>

@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #faf7f0;
+  --color-cream-dark: #f5f0e8;
+  --color-black: #0a0a0a;
+  --color-gray: #666666;
+
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+* {
+  @apply border-black;
+}
+
+body {
+  @apply bg-[--color-cream] text-[--color-black] font-mono antialiased;
+}
+
+/* Brutalist styling */
+.brutalist-border {
+  @apply border-4 border-black;
+}
+
+.brutalist-shadow {
+  @apply shadow-[4px_4px_0px_0px_rgba(0,0,0,1)];
+}
+
+.brutalist-hover {
+  @apply hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all;
+}

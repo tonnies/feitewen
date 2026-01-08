@@ -1,0 +1,22 @@
+{
+	"main": "dist/_worker.js/index.js",
+	"name": "fw",
+  "account_id": "05e933379205d0f26020c6c19c9d8fef",
+  "compatibility_date": "2026-01-08",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist"
+	},
+	"observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": [
+      "*/40 * * * *"
+    ]
+  }
+}

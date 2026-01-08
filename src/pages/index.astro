@@ -1,16 +1,90 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header';
+import ArticleCard from '../components/ArticleCard';
+import { getPublishedArticles, TOPICS } from '../lib/notion-fetch';
 
+const url = new URL(Astro.request.url);
+const topic = url.searchParams.get('topic') || undefined;
+const page = parseInt(url.searchParams.get('page') || '1');
+const pageSize = 12;
+
+const startCursor = url.searchParams.get('cursor') || undefined;
+
+const { articles, hasMore, nextCursor } = await getPublishedArticles(
+  topic,
+  pageSize,
+  startCursor
+);
+
+// Build pagination URLs
+const buildPageUrl = (newCursor?: string | null) => {
+  const params = new URLSearchParams();
+  if (topic) params.set('topic', topic);
+  if (newCursor) params.set('cursor', newCursor);
+  return `/?${params.toString()}`;
+};
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Feite Wen - South African News">
+  <Header topics={TOPICS} currentTopic={topic} client:load />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Page Header -->
+    <div class="mb-12">
+      <h1 class="text-5xl font-bold uppercase mb-4">
+        {topic ? `${topic} News` : 'Latest News'}
+      </h1>
+      <div class="h-2 w-32 bg-black"></div>
+    </div>
+
+    <!-- Articles Grid -->
+    {articles.length > 0 ? (
+      <>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {articles.map((article) => (
+            <ArticleCard
+              title={article.title}
+              excerpt={article.excerpt}
+              publishDate={article.publishDate}
+              topics={article.topics}
+              slug={article.slug}
+              whyItMatters={article.whyItMatters}
+              client:load
+            />
+          ))}
+        </div>
+
+        <!-- Pagination -->
+        {hasMore && (
+          <div class="flex justify-center">
+            <a
+              href={buildPageUrl(nextCursor)}
+              class="px-8 py-4 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-lg"
+            >
+              Load More Articles
+            </a>
+          </div>
+        )}
+      </>
+    ) : (
+      <div class="border-4 border-black bg-white p-12 text-center brutalist-shadow">
+        <p class="text-2xl font-bold uppercase">No articles found</p>
+        <p class="mt-4 text-[--color-gray]">
+          {topic ? `No articles found for "${topic}"` : 'Check back soon for new articles'}
+        </p>
+      </div>
+    )}
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t-4 border-black bg-[--color-cream-dark] mt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="text-center">
+        <p class="text-sm uppercase font-bold">
+          © {new Date().getFullYear()} Feite Wen. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+</Layout>

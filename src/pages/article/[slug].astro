@@ -1,0 +1,125 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header';
+import NotionBlocks from '../../components/NotionBlocks';
+import { getArticleBySlug, TOPICS } from '../../lib/notion-fetch';
+
+// SSR mode - no getStaticPaths needed
+const { slug } = Astro.params;
+
+if (!slug) {
+  return Astro.redirect('/');
+}
+
+const article = await getArticleBySlug(slug as string);
+
+if (!article) {
+  return Astro.redirect('/');
+}
+
+const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<Layout title={`${article.title} - Feite Wen`} description={article.excerpt}>
+  <Header topics={TOPICS} client:load />
+
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Back Button -->
+    <a
+      href="/"
+      class="inline-block mb-8 px-4 py-2 border-2 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-sm"
+    >
+      ← Back to All Articles
+    </a>
+
+    <!-- Article Header -->
+    <article class="border-4 border-black bg-white brutalist-shadow">
+      <header class="p-8 border-b-4 border-black bg-[--color-cream-dark]">
+        <!-- Topics -->
+        {article.topics.length > 0 && (
+          <div class="flex flex-wrap gap-2 mb-6">
+            {article.topics.map((topic) => (
+              <a
+                href={`/?topic=${encodeURIComponent(topic)}`}
+                class="px-3 py-1 border-2 border-black bg-white text-xs uppercase font-bold hover:bg-[--color-cream] transition-colors"
+              >
+                {topic}
+              </a>
+            ))}
+          </div>
+        )}
+
+        <!-- Title -->
+        <h1 class="text-5xl font-bold uppercase mb-6 leading-tight">
+          {article.title}
+        </h1>
+
+        <!-- Meta Info -->
+        <div class="flex items-center gap-4 text-sm text-[--color-gray] mb-6">
+          <time class="uppercase font-bold">{formattedDate}</time>
+          {article.author.length > 0 && (
+            <>
+              <span>•</span>
+              <span class="uppercase font-bold">By {article.author.join(", ")}</span>
+            </>
+          )}
+        </div>
+
+        <!-- Excerpt -->
+        {article.excerpt && (
+          <p class="text-lg leading-relaxed font-bold">
+            {article.excerpt}
+          </p>
+        )}
+      </header>
+
+      <!-- Why It Matters -->
+      {article.whyItMatters && (
+        <div class="p-8 bg-yellow-100 border-b-4 border-black">
+          <h2 class="text-sm uppercase font-bold mb-3">Why It Matters:</h2>
+          <p class="text-base leading-relaxed">
+            {article.whyItMatters}
+          </p>
+        </div>
+      )}
+
+      <!-- Article Content -->
+      <div class="p-8">
+        {article.content && article.content.length > 0 ? (
+          <NotionBlocks blocks={article.content} client:load />
+        ) : (
+          <p class="text-[--color-gray] italic">No content available</p>
+        )}
+      </div>
+    </article>
+
+    <!-- Share/Back Section -->
+    <div class="mt-12 flex justify-between items-center">
+      <a
+        href="/"
+        class="px-6 py-3 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold"
+      >
+        ← More Articles
+      </a>
+
+      <div class="text-right">
+        <p class="text-sm text-[--color-gray] uppercase">Share this article</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t-4 border-black bg-[--color-cream-dark] mt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="text-center">
+        <p class="text-sm uppercase font-bold">
+          © {new Date().getFullYear()} Feite Wen. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+</Layout>
