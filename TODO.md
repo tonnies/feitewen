@@ -5,8 +5,8 @@
 ### Article Cards
 - [x] Fix card content to display: Topic, Headline, Date, and Excerpt
 - [x] Remove "Why It Matters" from article cards
-- [ ] Add cover image to cards (pulled from Notion database)
-  - [ ] Create new "Cover Image" property in Notion database
+- [x] Add cover image to cards (pulled from Notion database)
+  - [x] Create new "Cover Image" property in Notion database (or use page cover)
 
 ### Homepage Sections
 - [x] Change "Latest News" to "Featured"
