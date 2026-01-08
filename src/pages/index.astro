@@ -6,16 +6,11 @@ import { getPublishedArticles, TOPICS } from '../lib/notion-fetch';
 
 const url = new URL(Astro.request.url);
 const topic = url.searchParams.get('topic') || undefined;
-const page = parseInt(url.searchParams.get('page') || '1');
-const pageSize = 12;
 
-const startCursor = url.searchParams.get('cursor') || undefined;
-
-const { articles, hasMore, nextCursor } = await getPublishedArticles(
-  topic,
-  pageSize,
-  startCursor
-);
+// Variables for filtered view
+let articles: any[] = [];
+let hasMore = false;
+let nextCursor: string | null = null;
 
 // Build pagination URLs
 const buildPageUrl = (newCursor?: string | null) => {
@@ -24,55 +19,149 @@ const buildPageUrl = (newCursor?: string | null) => {
   if (newCursor) params.set('cursor', newCursor);
   return `/?${params.toString()}`;
 };
+
+// Variables for homepage view
+let featuredArticles: any[] = [];
+let topicSections: { topic: string; articles: any[] }[] = [];
+
+if (topic) {
+  // If a specific topic is selected, show filtered view
+  const startCursor = url.searchParams.get('cursor') || undefined;
+  const result = await getPublishedArticles(topic, 12, startCursor);
+  articles = result.articles;
+  hasMore = result.hasMore;
+  nextCursor = result.nextCursor;
+} else {
+  // For homepage (no topic filter), fetch featured and topic sections
+
+  // Fetch featured articles (latest 3)
+  const { articles: featured } = await getPublishedArticles(undefined, 3);
+  featuredArticles = featured;
+
+  // Fetch articles for each topic (3 per topic)
+  topicSections = await Promise.all(
+    TOPICS.map(async (topicName) => {
+      const { articles } = await getPublishedArticles(topicName, 3);
+      return { topic: topicName, articles };
+    })
+  );
+
+  // Filter out topics with no articles
+  topicSections = topicSections.filter(section => section.articles.length > 0);
+}
 ---
 
 <Layout title="Feite Wen - South African News">
   <Header topics={TOPICS} currentTopic={topic} client:load />
 
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <!-- Page Header -->
-    <div class="mb-12">
-      <h1 class="text-5xl font-bold uppercase mb-4">
-        {topic ? `${topic} News` : 'Latest News'}
-      </h1>
-      <div class="h-2 w-32 bg-black"></div>
-    </div>
-
-    <!-- Articles Grid -->
-    {articles.length > 0 ? (
+    {topic ? (
+      /* Filtered Topic View */
       <>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {articles.map((article) => (
-            <ArticleCard
-              title={article.title}
-              excerpt={article.excerpt}
-              publishDate={article.publishDate}
-              topics={article.topics}
-              slug={article.slug}
-              client:load
-            />
-          ))}
+        <!-- Page Header -->
+        <div class="mb-12">
+          <h1 class="text-5xl font-bold uppercase mb-4">
+            {topic} News
+          </h1>
+          <div class="h-2 w-32 bg-black"></div>
         </div>
 
-        <!-- Pagination -->
-        {hasMore && (
-          <div class="flex justify-center">
-            <a
-              href={buildPageUrl(nextCursor)}
-              class="px-8 py-4 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-lg"
-            >
-              Load More Articles
-            </a>
+        <!-- Articles Grid -->
+        {articles.length > 0 ? (
+          <>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+              {articles.map((article) => (
+                <ArticleCard
+                  title={article.title}
+                  excerpt={article.excerpt}
+                  publishDate={article.publishDate}
+                  topics={article.topics}
+                  slug={article.slug}
+                  client:load
+                />
+              ))}
+            </div>
+
+            <!-- Pagination -->
+            {hasMore && (
+              <div class="flex justify-center">
+                <a
+                  href={buildPageUrl(nextCursor)}
+                  class="px-8 py-4 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-lg"
+                >
+                  Load More Articles
+                </a>
+              </div>
+            )}
+          </>
+        ) : (
+          <div class="border-4 border-black bg-white p-12 text-center brutalist-shadow">
+            <p class="text-2xl font-bold uppercase">No articles found</p>
+            <p class="mt-4 text-[--color-gray]">
+              No articles found for "{topic}"
+            </p>
           </div>
         )}
       </>
     ) : (
-      <div class="border-4 border-black bg-white p-12 text-center brutalist-shadow">
-        <p class="text-2xl font-bold uppercase">No articles found</p>
-        <p class="mt-4 text-[--color-gray]">
-          {topic ? `No articles found for "${topic}"` : 'Check back soon for new articles'}
-        </p>
-      </div>
+      /* Homepage with Featured and Topic Sections */
+      <>
+        <!-- Featured Section -->
+        <section class="mb-20">
+          <div class="mb-12">
+            <h2 class="text-5xl font-bold uppercase mb-4">Featured</h2>
+            <div class="h-2 w-32 bg-black"></div>
+          </div>
+
+          {featuredArticles.length > 0 ? (
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredArticles.map((article) => (
+                <ArticleCard
+                  title={article.title}
+                  excerpt={article.excerpt}
+                  publishDate={article.publishDate}
+                  topics={article.topics}
+                  slug={article.slug}
+                  client:load
+                />
+              ))}
+            </div>
+          ) : (
+            <p class="text-[--color-gray] italic">No featured articles available</p>
+          )}
+        </section>
+
+        <!-- Topic Sections -->
+        {topicSections.map((section) => (
+          <section class="mb-20">
+            <div class="mb-8 flex items-center justify-between">
+              <div>
+                <h2 class="text-4xl font-bold uppercase mb-4">{section.topic}</h2>
+                <div class="h-2 w-24 bg-black"></div>
+              </div>
+              <a
+                href={`/?topic=${encodeURIComponent(section.topic)}`}
+                class="px-4 py-2 border-2 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-sm"
+              >
+                View All →
+              </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {section.articles.map((article) => (
+                <ArticleCard
+                  title={article.title}
+                  excerpt={article.excerpt}
+                  publishDate={article.publishDate}
+                  topics={article.topics}
+                  slug={article.slug}
+                  client:load
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </>
     )}
   </main>
 
