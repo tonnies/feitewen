@@ -27,25 +27,25 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
 <Layout title={`${article.title} - Feite Wen`} description={article.excerpt}>
   <Header topics={TOPICS} client:load />
 
-  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
     <!-- Back Button -->
     <a
       href="/"
-      class="inline-block mb-8 px-4 py-2 border-2 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-sm"
+      class="inline-block mb-6 sm:mb-8 px-3 py-2 sm:px-4 border-2 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-xs sm:text-sm"
     >
       ← Back to All Articles
     </a>
 
     <!-- Article Header -->
     <article class="border-4 border-black bg-white brutalist-shadow">
-      <header class="p-8 border-b-4 border-black bg-yellow-100">
+      <header class="p-4 sm:p-6 lg:p-8 border-b-4 border-black bg-yellow-100">
         <!-- Topics -->
         {article.topics.length > 0 && (
-          <div class="flex flex-wrap gap-2 mb-6">
+          <div class="flex flex-wrap gap-2 mb-4 sm:mb-6">
             {article.topics.map((topic) => (
               <a
                 href={`/?topic=${encodeURIComponent(topic)}`}
-                class="px-3 py-1 border-2 border-black bg-white text-xs uppercase font-bold hover:bg-[--color-cream] transition-colors"
+                class="px-2 py-1 sm:px-3 border-2 border-black bg-white text-xs uppercase font-bold hover:bg-[--color-cream] transition-colors break-words"
               >
                 {topic}
               </a>
@@ -54,31 +54,31 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
         )}
 
         <!-- Title -->
-        <h1 class="text-5xl font-bold uppercase mb-6 leading-tight">
+        <h1 class="text-2xl sm:text-3xl lg:text-5xl font-bold uppercase mb-4 sm:mb-6 leading-tight break-words">
           {article.title}
         </h1>
 
         <!-- Meta Info -->
-        <div class="flex items-center gap-4 text-sm text-[--color-gray] mb-6">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-[--color-gray] mb-4 sm:mb-6">
           <time class="uppercase font-bold">{formattedDate}</time>
           {article.author.length > 0 && (
             <>
-              <span>•</span>
-              <span class="uppercase font-bold">By {article.author.join(", ")}</span>
+              <span class="hidden sm:inline">•</span>
+              <span class="uppercase font-bold break-words">By {article.author.join(", ")}</span>
             </>
           )}
         </div>
 
         <!-- Excerpt -->
         {article.excerpt && (
-          <p class="text-lg leading-relaxed font-bold">
+          <p class="text-base sm:text-lg leading-relaxed font-bold break-words">
             {article.excerpt}
           </p>
         )}
       </header>
 
       <!-- Article Content -->
-      <div class="p-8">
+      <div class="p-4 sm:p-6 lg:p-8">
         {article.content && article.content.length > 0 ? (
           <NotionBlocks blocks={article.content} client:load />
         ) : (
@@ -88,16 +88,16 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
     </article>
 
     <!-- Share/Back Section -->
-    <div class="mt-12 flex justify-between items-center">
+    <div class="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <a
         href="/"
-        class="px-6 py-3 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold"
+        class="px-4 py-2 sm:px-6 sm:py-3 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-sm sm:text-base"
       >
         ← More Articles
       </a>
 
-      <div class="text-right">
-        <p class="text-sm text-[--color-gray] uppercase">Share this article</p>
+      <div class="text-left sm:text-right">
+        <p class="text-xs sm:text-sm text-[--color-gray] uppercase">Share this article</p>
       </div>
     </div>
   </main>

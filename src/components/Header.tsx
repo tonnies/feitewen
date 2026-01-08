@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, Menu, X } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface HeaderProps {
@@ -9,6 +9,7 @@ interface HeaderProps {
 
 export default function Header({ topics, currentTopic }: HeaderProps) {
   const [isTopicDropdownOpen, setIsTopicDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <header className="border-b-4 border-black bg-[--color-cream]">
@@ -16,13 +17,13 @@ export default function Header({ topics, currentTopic }: HeaderProps) {
         <div className="flex items-center justify-between h-20">
           {/* Logo/Brand */}
           <a href="/" className="flex items-center">
-            <h1 className="text-3xl font-bold uppercase tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold uppercase tracking-tight">
               Feite Wen
             </h1>
           </a>
 
-          {/* Navigation */}
-          <nav className="flex items-center gap-6">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
             {/* Topic Filter Dropdown */}
             <div className="relative">
               <button
@@ -78,7 +79,63 @@ export default function Header({ topics, currentTopic }: HeaderProps) {
               About
             </a>
           </nav>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-2 border-2 border-black bg-white brutalist-shadow"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t-4 border-black py-4">
+            {/* Search Bar */}
+            <div className="relative mb-4">
+              <input
+                type="text"
+                placeholder="SEARCH..."
+                className="w-full px-4 py-2 border-2 border-black bg-white uppercase font-bold text-sm placeholder:text-[--color-gray] focus:outline-none focus:ring-0"
+              />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[--color-gray]" />
+            </div>
+
+            {/* Topics */}
+            <div className="mb-4">
+              <p className="px-4 py-2 text-xs uppercase font-bold text-[--color-gray]">Topics</p>
+              <a
+                href="/"
+                className="block px-4 py-3 border-2 border-black bg-white mb-2 hover:bg-[--color-cream-dark] transition-colors uppercase font-bold text-sm"
+              >
+                All Topics
+              </a>
+              {topics.map((topic) => (
+                <a
+                  key={topic}
+                  href={`/?topic=${encodeURIComponent(topic)}`}
+                  className="block px-4 py-3 border-2 border-black bg-white mb-2 hover:bg-[--color-cream-dark] transition-colors uppercase font-bold text-sm"
+                >
+                  {topic}
+                </a>
+              ))}
+            </div>
+
+            {/* About Link */}
+            <a
+              href="/about"
+              className="block px-4 py-3 border-2 border-black bg-white hover:bg-[--color-cream-dark] transition-colors uppercase font-bold text-sm"
+            >
+              About
+            </a>
+          </div>
+        )}
       </div>
     </header>
   );
