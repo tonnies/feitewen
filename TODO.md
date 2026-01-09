@@ -5,8 +5,8 @@
 ### Article Cards
 - [x] Fix card content to display: Topic, Headline, Date, and Excerpt
 - [x] Remove "Why It Matters" from article cards
-- [ ] Add cover image to cards (pulled from Notion database)
-  - [ ] Create new "Cover Image" property in Notion database
+- [x] Add cover image to cards (pulled from Notion database)
+  - [x] Create new "Cover Image" property in Notion database (or use page cover)
 
 ### Homepage Sections
 - [x] Change "Latest News" to "Featured"
@@ -27,10 +27,12 @@
 - [ ] Add favicon for Feitewen
 
 ## Technical Issues
-- [ ] Fix long article content being cut off after certain character limit
-  - Current issue: 2000 character limit
-  - Solution: Serve text in chunks
-- [ ] Fix cache errors on Cloudflare
+- [x] Fix long article content being cut off after certain character limit
+  - ~~Current issue: 2000 character limit~~
+  - ~~Solution: Serve text in chunks~~
+  - **FIXED**: Added block pagination to fetch all content
+- [x] Fix cache errors on Cloudflare
+  - **FIXED**: Cache now uses proper URLs, TTL increased to 1 hour
 
 ## Future Enhancements
 - [ ] Build "Featured" function (currently just showing latest by date)

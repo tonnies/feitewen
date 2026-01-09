@@ -16,6 +16,7 @@ export interface Article {
   whyItMatters: string;
   status: string;
   content: any;
+  coverImage?: string;
 }
 
 // Get environment variables
@@ -117,6 +118,29 @@ export async function getPublishedArticles(
   }
 }
 
+// Fetch all blocks for a page (with pagination for long articles)
+async function fetchAllBlocks(pageId: string): Promise<any[]> {
+  let allBlocks: any[] = [];
+  let cursor: string | undefined = undefined;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await notionFetch(`/blocks/${pageId}/children${cursor ? `?start_cursor=${cursor}` : ''}`);
+
+    allBlocks = allBlocks.concat(response.results);
+    hasMore = response.has_more;
+    cursor = response.next_cursor;
+
+    // Safety limit to prevent infinite loops
+    if (allBlocks.length > 1000) {
+      console.warn(`Article ${pageId} has over 1000 blocks, stopping pagination`);
+      break;
+    }
+  }
+
+  return allBlocks;
+}
+
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
   const cacheKey = CACHE_KEYS.article(slug);
   const cached = await getCachedData<Article | null>(cacheKey);
@@ -154,9 +178,8 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
     const page = response.results[0];
     const article = extractArticleData(page);
 
-    // Fetch page content
-    const blocks = await notionFetch(`/blocks/${page.id}/children`);
-    article.content = blocks.results;
+    // Fetch ALL page content with pagination (fixes long article cutoff issue)
+    article.content = await fetchAllBlocks(page.id);
 
     await setCachedData(cacheKey, article);
 
@@ -220,6 +243,28 @@ function extractArticleData(page: any): Article {
     status = properties.Status.status.name;
   }
 
+  // Extract cover image
+  let coverImage: string | undefined = undefined;
+
+  // First, try to get from "Cover Image" property (files type)
+  if (properties["Cover Image"]?.type === "files" && properties["Cover Image"].files?.length > 0) {
+    const file = properties["Cover Image"].files[0];
+    if (file.type === "external") {
+      coverImage = file.external?.url;
+    } else if (file.type === "file") {
+      coverImage = file.file?.url;
+    }
+  }
+
+  // Fallback to page cover if property not found
+  if (!coverImage && page.cover) {
+    if (page.cover.type === "external") {
+      coverImage = page.cover.external?.url;
+    } else if (page.cover.type === "file") {
+      coverImage = page.cover.file?.url;
+    }
+  }
+
   return {
     id: page.id,
     title,
@@ -231,6 +276,7 @@ function extractArticleData(page: any): Article {
     whyItMatters,
     status,
     content: null,
+    coverImage,
   };
 }
 
