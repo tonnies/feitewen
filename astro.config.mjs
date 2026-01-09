@@ -25,11 +25,6 @@ export default defineConfig({
   }),
   integrations: [react()],
 
-  // Security configuration
-  security: {
-    checkOrigin: false, // Disable strict origin checking for Cloudflare deployments
-  },
-
   vite: {
     plugins: [tailwindcss()],
     ssr: {
