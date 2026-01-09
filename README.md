@@ -4,21 +4,24 @@ A modern news website built with Astro, React, Tailwind CSS, and Notion as a CMS
 
 ## Tech Stack
 
-- **Framework**: Astro
+- **Framework**: Astro (SSR mode)
+- **Database**: Cloudflare D1 (SQLite)
 - **Styling**: Tailwind CSS (Brutalist design with cream/off-white theme)
 - **UI Components**: shadcn/ui components with React
-- **CMS**: Notion
-- **Hosting**: Cloudflare Workers
+- **CMS**: Notion (synced to D1 via background worker)
+- **Hosting**: Cloudflare Workers/Pages
+- **Search**: SQLite FTS5 (Full-Text Search)
 
 ## Features
 
-- Homepage with article grid and pagination
-- Individual article pages with full content
-- Topic filtering
-- Search bar (UI ready, functionality to be added)
-- About page (placeholder)
-- Notion webhook integration for automatic rebuilds
-- Brutalist design aesthetic
+- ⚡ **Lightning-fast page loads** with Cloudflare D1 database (10-50ms)
+- 🔍 **Full-text search** across all articles
+- 📰 **Homepage** with article grid and pagination
+- 📄 **Individual article pages** with full content and related articles
+- 🏷️ **Topic filtering** across 12 news categories
+- 🔄 **Automatic sync** from Notion to D1 every 10 minutes
+- 🎨 **Brutalist design** aesthetic
+- 📱 **Fully responsive** mobile-first design
 
 ## Setup
 
@@ -60,20 +63,40 @@ Your Articles database should have these properties:
 - **Status** (status) - Draft/Ready/Published
 - **Why It Matters** (rich_text) - Additional context
 
-### 5. Cloudflare Workers Setup
+### 5. Cloudflare D1 Database Setup
 
-1. Install Wrangler CLI: `npm install -g wrangler`
-2. Login to Cloudflare: `wrangler login`
-3. Deploy the site: `npm run build && wrangler deploy`
-4. Set environment variables: `wrangler secret put NOTION_API_KEY`
-5. The cron trigger will automatically run every 40 minutes to refresh the cache
+**⚠️ IMPORTANT**: This site now uses Cloudflare D1 database for fast page loading.
 
-Or use Cloudflare Pages:
-1. Create a Cloudflare Pages project
-2. Connect your GitHub repository
-3. Set build command: `npm run build`
-4. Set build output directory: `dist`
-5. Add environment variables in Cloudflare settings
+See **[D1_SETUP.md](./D1_SETUP.md)** for complete setup instructions.
+
+Quick setup:
+```bash
+# 1. Create D1 database
+wrangler d1 create feitewen-test
+
+# 2. Update wrangler.toml with database_id
+
+# 3. Run migrations
+wrangler d1 execute feitewen-test --file=./migrations/0001_create_articles_table.sql --remote
+
+# 4. Set secrets
+wrangler secret put NOTION_API_KEY
+wrangler secret put NOTION_DATABASE_ID
+
+# 5. Deploy sync worker
+wrangler deploy src/workers/sync.ts
+
+# 6. Initial sync
+curl -X POST https://YOUR-WORKER-URL.workers.dev/sync
+```
+
+### 6. Deploy to Cloudflare Pages
+
+```bash
+# Build and deploy
+npm run build
+wrangler pages deploy dist
+```
 
 ## Development
 
@@ -101,28 +124,33 @@ npm run preview
 
 ## Deployment
 
-The site is configured to deploy on Cloudflare Workers using SSR (Server-Side Rendering) mode. When you push to your main branch, Cloudflare will automatically build and deploy.
+The site is configured to deploy on Cloudflare Workers/Pages using SSR (Server-Side Rendering) mode.
 
-### Cache and Auto-Refresh
+### Architecture
 
-The site uses a **caching system** with automatic refresh:
+```
+Notion CMS → Sync Worker (cron: every 10 min) → D1 Database → Astro SSR → User
+```
 
-1. **Cloudflare Cache API** - Caches Notion data for fast serving
-2. **Cron Trigger** - Automatically refreshes cache every 40 minutes
-3. **On-demand refresh** - Call `/api/webhook` (POST) to manually clear cache
+**Benefits**:
+- ⚡ **10-50ms page loads** (vs 500-1500ms with direct Notion API)
+- 🚀 **No caching complexity** - D1 is fast enough without cache
+- 💪 **Reliable** - Works even if Notion API is down
+- 🔍 **Full-text search** powered by SQLite FTS5
+- 📊 **Related articles** based on shared topics
 
-How it works:
-- First request fetches data from Notion and caches it
-- Subsequent requests serve from cache (very fast)
-- Every 40 minutes, the cron job invalidates the cache
-- Next request after invalidation fetches fresh data from Notion
+### Sync Worker
 
-### Manual Cache Refresh
+The sync worker automatically syncs Notion → D1 every 10 minutes via Cloudflare Cron Triggers.
 
-To manually refresh the cache:
-
+**Manual sync trigger**:
 ```bash
-curl -X POST https://your-domain.com/api/webhook
+curl -X POST https://YOUR-WORKER-URL.workers.dev/sync
+```
+
+**Monitor sync status**:
+```bash
+wrangler tail  # View real-time logs
 ```
 
 Only articles with status "Published" will appear on the site. Draft and Ready articles are excluded.
@@ -131,6 +159,8 @@ Only articles with status "Published" will appear on the site. Draft and Ready a
 
 ```
 /
+├── migrations/
+│   └── 0001_create_articles_table.sql  # D1 database schema
 ├── public/
 │   └── favicon.svg
 ├── src/
@@ -141,23 +171,25 @@ Only articles with status "Published" will appear on the site. Draft and Ready a
 │   ├── layouts/
 │   │   └── Layout.astro
 │   ├── lib/
-│   │   ├── cache.ts
-│   │   ├── notion.ts
+│   │   ├── db-fetch.ts        # D1 database queries (NEW)
+│   │   ├── notion-fetch.ts     # Legacy Notion API (deprecated)
+│   │   ├── cache.ts           # Cache utilities (deprecated)
 │   │   └── utils.ts
 │   ├── pages/
-│   │   ├── api/
-│   │   │   ├── cron.ts
-│   │   │   └── webhook.ts
 │   │   ├── article/
-│   │   │   └── [slug].astro
+│   │   │   └── [slug].astro   # Article detail + related articles
 │   │   ├── about.astro
-│   │   └── index.astro
+│   │   ├── index.astro        # Homepage with topic sections
+│   │   └── search.astro       # Full-text search (NEW)
+│   ├── workers/
+│   │   └── sync.ts            # Notion → D1 sync worker (NEW)
 │   ├── styles/
 │   │   └── global.css
-│   └── worker.ts
 ├── astro.config.mjs
+├── wrangler.toml               # Cloudflare configuration (NEW)
+├── D1_SETUP.md                 # D1 setup guide (NEW)
 ├── package.json
-└── wrangler.jsonc
+└── README.md
 ```
 
 ## Topics

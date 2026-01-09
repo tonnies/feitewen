@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header';
 import ArticleCard from '../components/ArticleCard';
-import { getPublishedArticles, TOPICS } from '../lib/notion-fetch';
+import { getPublishedArticles, TOPICS } from '../lib/db-fetch';
 
 const url = new URL(Astro.request.url);
 const topic = url.searchParams.get('topic') || undefined;

@@ -12,6 +12,16 @@ export default defineConfig({
     mode: 'directory',
     functionPerRoute: false,
     wasmModuleImports: false,
+    runtime: {
+      mode: 'local',
+      type: 'pages',
+      // D1 database bindings will be loaded from wrangler.toml
+      bindings: {
+        DB: {
+          type: 'd1',
+        }
+      }
+    },
   }),
   integrations: [react()],
 

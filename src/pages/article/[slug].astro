@@ -2,7 +2,8 @@
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header';
 import NotionBlocks from '../../components/NotionBlocks';
-import { getArticleBySlug, TOPICS } from '../../lib/notion-fetch';
+import ArticleCard from '../../components/ArticleCard';
+import { getArticleBySlug, getRelatedArticles, TOPICS } from '../../lib/db-fetch';
 
 // SSR mode - no getStaticPaths needed
 const { slug } = Astro.params;
@@ -22,6 +23,9 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
   month: "long",
   day: "numeric",
 });
+
+// Fetch related articles based on shared topics
+const relatedArticles = await getRelatedArticles(slug as string, 3);
 ---
 
 <Layout title={`${article.title} - Feite Wen`} description={article.excerpt}>
@@ -100,6 +104,30 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
         <p class="text-xs sm:text-sm text-[--color-gray] uppercase">Share this article</p>
       </div>
     </div>
+
+    <!-- Related Articles Section -->
+    {relatedArticles.length > 0 && (
+      <section class="mt-12 sm:mt-16">
+        <div class="mb-6 sm:mb-8">
+          <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold uppercase mb-4">Related Articles</h2>
+          <div class="h-2 w-24 bg-black"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {relatedArticles.map((relatedArticle) => (
+            <ArticleCard
+              title={relatedArticle.title}
+              excerpt={relatedArticle.excerpt}
+              publishDate={relatedArticle.publishDate}
+              topics={relatedArticle.topics}
+              slug={relatedArticle.slug}
+              coverImage={relatedArticle.coverImage}
+              client:load
+            />
+          ))}
+        </div>
+      </section>
+    )}
   </main>
 
   <!-- Footer -->
