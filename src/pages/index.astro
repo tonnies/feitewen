@@ -4,16 +4,8 @@ import Header from '../components/Header';
 import ArticleCard from '../components/ArticleCard';
 import { getPublishedArticles, TOPICS } from '../lib/db-fetch';
 
-// Debug: Check what's available
-console.log('Astro.locals keys:', Object.keys(Astro.locals));
-console.log('Has runtime:', !!Astro.locals.runtime);
-if (Astro.locals.runtime) {
-  console.log('Runtime keys:', Object.keys(Astro.locals.runtime));
-  if (Astro.locals.runtime.env) {
-    console.log('Env keys:', Object.keys(Astro.locals.runtime.env));
-    console.log('Has DB:', !!Astro.locals.runtime.env.DB);
-  }
-}
+// Get D1 database from Cloudflare Workers runtime
+const db = Astro.locals.runtime.env.DB;
 
 const url = new URL(Astro.request.url);
 const topic = url.searchParams.get('topic') || undefined;
@@ -38,7 +30,7 @@ let topicSections: { topic: string; articles: any[] }[] = [];
 if (topic) {
   // If a specific topic is selected, show filtered view
   const startCursor = url.searchParams.get('cursor') || undefined;
-  const result = await getPublishedArticles(topic, 12, startCursor);
+  const result = await getPublishedArticles(db, topic, 12, startCursor);
   articles = result.articles;
   hasMore = result.hasMore;
   nextCursor = result.nextCursor;
@@ -46,13 +38,13 @@ if (topic) {
   // For homepage (no topic filter), fetch featured and topic sections
 
   // Fetch featured articles (latest 3)
-  const { articles: featured } = await getPublishedArticles(undefined, 3);
+  const { articles: featured } = await getPublishedArticles(db, undefined, 3);
   featuredArticles = featured;
 
   // Fetch articles for each topic (3 per topic)
   topicSections = await Promise.all(
     TOPICS.map(async (topicName) => {
-      const { articles } = await getPublishedArticles(topicName, 3);
+      const { articles } = await getPublishedArticles(db, topicName, 3);
       return { topic: topicName, articles };
     })
   );

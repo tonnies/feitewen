@@ -4,6 +4,9 @@ import Header from '../components/Header';
 import ArticleCard from '../components/ArticleCard';
 import { searchArticles, TOPICS } from '../lib/db-fetch';
 
+// Get D1 database from Cloudflare Workers runtime
+const db = Astro.locals.runtime.env.DB;
+
 const url = new URL(Astro.request.url);
 const query = url.searchParams.get('q') || '';
 const page = parseInt(url.searchParams.get('page') || '1', 10);
@@ -15,7 +18,7 @@ let hasMore = false;
 let total = 0;
 
 if (query.trim()) {
-  const result = await searchArticles(query, pageSize, offset);
+  const result = await searchArticles(db, query, pageSize, offset);
   articles = result.articles;
   hasMore = result.hasMore;
   total = result.total;
