@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "feitewen-test"
-database_id = "test-db-id" # Will be replaced after creating DB
+database_id = "b1e4aa1a-a1ba-4fbd-8eee-c1612986b3e5"
 
 # Uncomment for production after testing
 # [[d1_databases]]
