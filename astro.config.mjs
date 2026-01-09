@@ -25,11 +25,6 @@ export default defineConfig({
   }),
   integrations: [react()],
 
-  // Security configuration for Cloudflare Workers
-  security: {
-    checkOrigin: false, // Required for Workers deployment
-  },
-
   vite: {
     plugins: [tailwindcss()],
     ssr: {
