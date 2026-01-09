@@ -20,17 +20,38 @@ export interface Article {
 // Get D1 database from Astro runtime
 function getDB(): D1Database {
   // @ts-ignore - Astro locals includes D1 binding
-  // Try different paths where D1 might be bound in Cloudflare Workers
   if (typeof Astro !== 'undefined') {
-    // For Cloudflare Workers
+    // Debug: Log what's available
+    console.log('Astro.locals available keys:', Object.keys(Astro.locals || {}));
+    console.log('Astro.locals.runtime:', Astro.locals?.runtime);
+
+    // Try Workers binding path
     if (Astro?.locals?.DB) {
+      console.log('Found DB at Astro.locals.DB');
       return Astro.locals.DB;
     }
-    // For Cloudflare Pages
+
+    // Try Pages binding path
     if (Astro?.locals?.runtime?.env?.DB) {
+      console.log('Found DB at Astro.locals.runtime.env.DB');
       return Astro.locals.runtime.env.DB;
     }
+
+    // Try direct env access
+    if (Astro?.locals?.env?.DB) {
+      console.log('Found DB at Astro.locals.env.DB');
+      return Astro.locals.env.DB;
+    }
+
+    // Log full structure for debugging
+    console.error('DB binding not found. Available structure:', JSON.stringify({
+      localsKeys: Object.keys(Astro.locals || {}),
+      hasRuntime: !!Astro.locals?.runtime,
+      hasEnv: !!Astro.locals?.env,
+      runtimeKeys: Astro.locals?.runtime ? Object.keys(Astro.locals.runtime) : [],
+    }));
   }
+
   throw new Error('D1 database not available. Make sure DB binding is configured in Cloudflare dashboard.');
 }
 
