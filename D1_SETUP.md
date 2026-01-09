@@ -10,11 +10,43 @@ Replaces direct Notion API calls with a fast D1 database:
 
 Background sync worker syncs Notion → D1 every 10 minutes.
 
+## 🏗️ Architecture Overview
+
+This setup involves **two separate deployments**:
+
+1. **Astro Site** (Cloudflare Pages)
+   - Your main website
+   - Reads from D1 database
+   - Served to users
+   - Config: `wrangler.toml` (for local dev only)
+
+2. **Sync Worker** (Cloudflare Worker)
+   - Background worker
+   - Syncs Notion → D1 every 10 minutes
+   - Runs on cron schedule
+   - Config: `wrangler-sync.toml`
+
+Both share the same D1 database but are deployed independently.
+
 ## 📋 Prerequisites
 
 - Cloudflare account (free tier works)
 - Wrangler CLI installed (`npm install -g wrangler`)
 - Authenticated with Cloudflare (`wrangler login`)
+- Node.js and npm installed
+
+## ⚡ Quick Start Summary
+
+Here's the deployment order:
+
+1. Create D1 database
+2. Update both config files with database_id
+3. Run migrations
+4. Set secrets for sync worker
+5. Deploy sync worker
+6. Trigger initial sync
+7. Deploy Astro site to Cloudflare Pages
+8. Configure D1 binding in Pages dashboard
 
 ## 🚀 Setup Steps
 
@@ -34,15 +66,24 @@ wrangler d1 create feitewen-test
 # database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 
-### 2. Update wrangler.toml
+### 2. Update Configuration Files
 
-Copy the `database_id` from the output above and update `wrangler.toml`:
+Copy the `database_id` from the output above and update **BOTH** config files:
 
+**Update `wrangler.toml` (for Astro site local dev):**
 ```toml
 [[d1_databases]]
 binding = "DB"
 database_name = "feitewen-test"
 database_id = "YOUR-DATABASE-ID-HERE"  # Replace with actual ID
+```
+
+**Update `wrangler-sync.toml` (for sync worker):**
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "feitewen-test"
+database_id = "YOUR-DATABASE-ID-HERE"  # Replace with actual ID (same as above)
 ```
 
 ### 3. Run Database Migrations
@@ -73,15 +114,17 @@ wrangler secret put NOTION_DATABASE_ID
 
 ### 5. Deploy Sync Worker
 
+The sync worker is deployed separately from the Astro site.
+
 ```bash
-# Deploy the sync worker
-wrangler deploy src/workers/sync.ts
+# Deploy the sync worker using its dedicated config
+wrangler deploy src/workers/sync.ts --config wrangler-sync.toml
 
 # You'll see output like:
 # Total Upload: XX.XX KiB / gzip: XX.XX KiB
 # Uploaded feitewen (X.XX sec)
 # Published feitewen (X.XX sec)
-#   https://feitewen.YOUR-SUBDOMAIN.workers.dev
+#   https://feitewen-sync.YOUR-SUBDOMAIN.workers.dev
 ```
 
 ### 6. Perform Initial Sync
@@ -122,34 +165,56 @@ wrangler d1 execute feitewen-test --command "SELECT COUNT(*) as total FROM artic
 wrangler d1 execute feitewen-test --command "SELECT title, slug, publish_date FROM articles LIMIT 5" --remote
 ```
 
-### 8. Update Astro Dev Environment
+### 8. Local Development with D1
 
-For local development with D1:
+For local development with D1 bindings:
 
 ```bash
 # Install wrangler as dev dependency if not already installed
 npm install -D wrangler
 
-# Run Astro with D1 bindings
-npm run dev -- --config-file wrangler.toml
-```
-
-Alternatively, use Cloudflare's local dev mode:
-
-```bash
-# This will run Astro with D1 bindings automatically
+# Option 1: Use wrangler pages dev (RECOMMENDED)
 npx wrangler pages dev -- npm run dev
+
+# Option 2: Use Astro dev directly (D1 might not work locally)
+npm run dev
 ```
 
-### 9. Build and Deploy to Cloudflare Pages
+**Note**: During local development, you may need to use the remote D1 database since local D1 emulation can be limited.
+
+### 9. Deploy Astro Site to Cloudflare Pages
+
+There are two ways to deploy:
+
+**Option A: Via Cloudflare Dashboard (Recommended for first-time setup)**
+
+1. Go to Cloudflare Dashboard → Pages
+2. Click "Create a project"
+3. Connect your GitHub repository
+4. Configure build settings:
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+   - Framework preset: `Astro`
+5. Click "Save and Deploy"
+6. After deployment, go to Settings → Functions → D1 database bindings
+7. Add binding:
+   - Variable name: `DB`
+   - D1 database: Select `feitewen-test`
+8. Redeploy the site
+
+**Option B: Via Wrangler CLI**
 
 ```bash
-# Build the Astro site
+# First, build the site
 npm run build
 
 # Deploy to Cloudflare Pages
-wrangler pages deploy dist
+wrangler pages deploy dist --project-name feitewen
+
+# After first deployment, configure D1 binding in dashboard as described above
 ```
+
+**Important**: After deploying, you MUST configure the D1 binding in Cloudflare Pages settings for the site to work.
 
 ## 🔄 Sync Worker Configuration
 
@@ -165,7 +230,7 @@ curl -X POST https://feitewen.YOUR-SUBDOMAIN.workers.dev/sync
 
 ### Change Sync Frequency
 
-Edit `wrangler.toml`:
+Edit `wrangler-sync.toml`:
 
 ```toml
 # Every 10 minutes (current)
@@ -180,7 +245,7 @@ crons = ["0 * * * *"]
 
 Redeploy after changes:
 ```bash
-wrangler deploy src/workers/sync.ts
+wrangler deploy src/workers/sync.ts --config wrangler-sync.toml
 ```
 
 ## 🧪 Testing
@@ -268,18 +333,30 @@ Once testing is successful, create production database:
 # 1. Create production database
 wrangler d1 create feitewen-prod
 
-# 2. Update wrangler.toml with production config
+# 2. Update BOTH config files with production database_id
+# - wrangler.toml
+# - wrangler-sync.toml
+
 # 3. Run migrations on production DB
 wrangler d1 execute feitewen-prod --file=./migrations/0001_create_articles_table.sql --remote
 
-# 4. Set production secrets (if different)
-wrangler secret put NOTION_API_KEY --env production
-wrangler secret put NOTION_DATABASE_ID --env production
+# 4. Set production secrets for sync worker
+wrangler secret put NOTION_API_KEY
+wrangler secret put NOTION_DATABASE_ID
 
-# 5. Deploy
-wrangler deploy src/workers/sync.ts --env production
+# 5. Deploy sync worker
+wrangler deploy src/workers/sync.ts --config wrangler-sync.toml
+
+# 6. Trigger initial sync
+curl -X POST https://YOUR-SYNC-WORKER.workers.dev/sync
+
+# 7. Deploy Astro site to Cloudflare Pages
 npm run build
-wrangler pages deploy dist --env production
+wrangler pages deploy dist --project-name feitewen
+
+# 8. Configure D1 binding in Cloudflare Pages dashboard
+# Go to: Pages > feitewen > Settings > Functions > D1 database bindings
+# Add: DB -> feitewen-prod
 ```
 
 ## 🔍 Monitoring
