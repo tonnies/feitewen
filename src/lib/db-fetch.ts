@@ -20,10 +20,18 @@ export interface Article {
 // Get D1 database from Astro runtime
 function getDB(): D1Database {
   // @ts-ignore - Astro locals includes D1 binding
-  if (typeof Astro !== 'undefined' && Astro?.locals?.runtime?.env?.DB) {
-    return Astro.locals.runtime.env.DB;
+  // Try different paths where D1 might be bound in Cloudflare Workers
+  if (typeof Astro !== 'undefined') {
+    // For Cloudflare Workers
+    if (Astro?.locals?.DB) {
+      return Astro.locals.DB;
+    }
+    // For Cloudflare Pages
+    if (Astro?.locals?.runtime?.env?.DB) {
+      return Astro.locals.runtime.env.DB;
+    }
   }
-  throw new Error('D1 database not available');
+  throw new Error('D1 database not available. Make sure DB binding is configured in Cloudflare dashboard.');
 }
 
 // Helper to parse JSON fields
