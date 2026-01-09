@@ -21,8 +21,8 @@
 
 ## Styling & Design
 - [x] Fix mobile view
-- [ ] Add colour to article tags (pull colours from Notion database)
-  - [ ] Create new property in Notion database for tag colours
+- [x] Add colour to article tags
+  - **IMPLEMENTED**: Each topic has a unique pastel color
 - [ ] Add Feitewen logo
 - [ ] Add favicon for Feitewen
 
