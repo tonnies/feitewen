@@ -12,6 +12,10 @@ export default defineConfig({
     mode: 'directory',
     functionPerRoute: false,
     wasmModuleImports: false,
+    runtime: {
+      mode: 'local',
+      type: 'off', // Don't use runtime config for deployed Workers
+    },
   }),
   integrations: [react()],
 

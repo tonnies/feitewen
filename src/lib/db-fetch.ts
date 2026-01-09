@@ -19,40 +19,21 @@ export interface Article {
 
 // Get D1 database from Astro runtime
 function getDB(): D1Database {
-  // @ts-ignore - Astro locals includes D1 binding
-  if (typeof Astro !== 'undefined') {
-    // Debug: Log what's available
-    console.log('Astro.locals available keys:', Object.keys(Astro.locals || {}));
-    console.log('Astro.locals.runtime:', Astro.locals?.runtime);
-
-    // Try Workers binding path
-    if (Astro?.locals?.DB) {
-      console.log('Found DB at Astro.locals.DB');
-      return Astro.locals.DB;
-    }
-
-    // Try Pages binding path
-    if (Astro?.locals?.runtime?.env?.DB) {
-      console.log('Found DB at Astro.locals.runtime.env.DB');
-      return Astro.locals.runtime.env.DB;
-    }
-
-    // Try direct env access
-    if (Astro?.locals?.env?.DB) {
-      console.log('Found DB at Astro.locals.env.DB');
-      return Astro.locals.env.DB;
-    }
-
-    // Log full structure for debugging
-    console.error('DB binding not found. Available structure:', JSON.stringify({
-      localsKeys: Object.keys(Astro.locals || {}),
-      hasRuntime: !!Astro.locals?.runtime,
-      hasEnv: !!Astro.locals?.env,
-      runtimeKeys: Astro.locals?.runtime ? Object.keys(Astro.locals.runtime) : [],
-    }));
+  // @ts-ignore - Astro locals includes runtime from Cloudflare Workers
+  if (typeof Astro !== 'undefined' && Astro?.locals?.runtime?.env?.DB) {
+    return Astro.locals.runtime.env.DB;
   }
 
-  throw new Error('D1 database not available. Make sure DB binding is configured in Cloudflare dashboard.');
+  // Log detailed error for debugging
+  console.error('D1 database not available', {
+    hasAstro: typeof Astro !== 'undefined',
+    hasLocals: typeof Astro !== 'undefined' && !!Astro?.locals,
+    hasRuntime: typeof Astro !== 'undefined' && !!Astro?.locals?.runtime,
+    hasEnv: typeof Astro !== 'undefined' && !!Astro?.locals?.runtime?.env,
+    hasDB: typeof Astro !== 'undefined' && !!Astro?.locals?.runtime?.env?.DB,
+  });
+
+  throw new Error('D1 database not available. Check that DB binding is configured in wrangler.jsonc');
 }
 
 // Helper to parse JSON fields
