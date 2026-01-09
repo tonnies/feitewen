@@ -1,0 +1,157 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header';
+import ArticleCard from '../components/ArticleCard';
+import { searchArticles, TOPICS } from '../lib/db-fetch';
+
+const url = new URL(Astro.request.url);
+const query = url.searchParams.get('q') || '';
+const page = parseInt(url.searchParams.get('page') || '1', 10);
+const pageSize = 12;
+const offset = (page - 1) * pageSize;
+
+let articles: any[] = [];
+let hasMore = false;
+let total = 0;
+
+if (query.trim()) {
+  const result = await searchArticles(query, pageSize, offset);
+  articles = result.articles;
+  hasMore = result.hasMore;
+  total = result.total;
+}
+
+// Build pagination URLs
+const buildPageUrl = (newPage: number) => {
+  const params = new URLSearchParams();
+  if (query) params.set('q', query);
+  params.set('page', newPage.toString());
+  return `/search?${params.toString()}`;
+};
+
+const totalPages = Math.ceil(total / pageSize);
+---
+
+<Layout title={query ? `Search: ${query} - Feite Wen` : "Search - Feite Wen"}>
+  <Header topics={TOPICS} client:load />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <!-- Search Header -->
+    <div class="mb-8 sm:mb-12">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase mb-4 break-words">
+        Search Articles
+      </h1>
+      <div class="h-2 w-32 bg-black"></div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="mb-8 sm:mb-12">
+      <form method="get" action="/search" class="max-w-2xl">
+        <div class="flex gap-4">
+          <input
+            type="text"
+            name="q"
+            value={query}
+            placeholder="Search articles..."
+            class="flex-1 px-4 py-3 border-4 border-black focus:outline-none focus:ring-4 focus:ring-[--color-cream] text-base"
+            required
+          />
+          <button
+            type="submit"
+            class="px-6 py-3 border-4 border-black bg-yellow-100 brutalist-shadow brutalist-hover uppercase font-bold text-base whitespace-nowrap"
+          >
+            Search
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Search Results -->
+    {query.trim() && (
+      <>
+        <div class="mb-6">
+          <p class="text-lg font-bold uppercase">
+            {total > 0 ? (
+              <>Found {total} {total === 1 ? 'article' : 'articles'} for "{query}"</>
+            ) : (
+              <>No results found for "{query}"</>
+            )}
+          </p>
+        </div>
+
+        {articles.length > 0 ? (
+          <>
+            <!-- Articles Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12">
+              {articles.map((article) => (
+                <ArticleCard
+                  title={article.title}
+                  excerpt={article.excerpt}
+                  publishDate={article.publishDate}
+                  topics={article.topics}
+                  slug={article.slug}
+                  coverImage={article.coverImage}
+                  client:load
+                />
+              ))}
+            </div>
+
+            <!-- Pagination -->
+            {totalPages > 1 && (
+              <div class="flex justify-center items-center gap-4">
+                {page > 1 && (
+                  <a
+                    href={buildPageUrl(page - 1)}
+                    class="px-6 py-3 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-sm"
+                  >
+                    ← Previous
+                  </a>
+                )}
+
+                <span class="text-sm font-bold uppercase">
+                  Page {page} of {totalPages}
+                </span>
+
+                {page < totalPages && (
+                  <a
+                    href={buildPageUrl(page + 1)}
+                    class="px-6 py-3 border-4 border-black bg-white brutalist-shadow brutalist-hover uppercase font-bold text-sm"
+                  >
+                    Next →
+                  </a>
+                )}
+              </div>
+            )}
+          </>
+        ) : query.trim() && (
+          <div class="border-4 border-black bg-white p-12 text-center brutalist-shadow">
+            <p class="text-2xl font-bold uppercase">No articles found</p>
+            <p class="mt-4 text-[--color-gray]">
+              Try searching with different keywords
+            </p>
+          </div>
+        )}
+      </>
+    )}
+
+    {!query.trim() && (
+      <div class="border-4 border-black bg-white p-12 text-center brutalist-shadow">
+        <p class="text-2xl font-bold uppercase">Enter a search query</p>
+        <p class="mt-4 text-[--color-gray]">
+          Search across all article titles, excerpts, and content
+        </p>
+      </div>
+    )}
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t-4 border-black bg-[--color-cream-dark] mt-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="text-center">
+        <p class="text-sm uppercase font-bold">
+          © {new Date().getFullYear()} Feite Wen. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </footer>
+</Layout>

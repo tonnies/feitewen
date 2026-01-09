@@ -58,15 +58,18 @@ export default function Header({ topics, currentTopic }: HeaderProps) {
               )}
             </div>
 
-            {/* Search Bar (UI only) */}
-            <div className="relative">
+            {/* Search Bar */}
+            <form action="/search" method="get" className="relative">
               <input
                 type="text"
+                name="q"
                 placeholder="SEARCH..."
                 className="w-64 px-4 py-2 border-2 border-black bg-white uppercase font-bold text-sm placeholder:text-[--color-gray] focus:outline-none focus:ring-0"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[--color-gray]" />
-            </div>
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
+                <Search className="w-5 h-5 text-[--color-gray]" />
+              </button>
+            </form>
 
             {/* About Link */}
             <a
@@ -98,14 +101,17 @@ export default function Header({ topics, currentTopic }: HeaderProps) {
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t-4 border-black py-4">
             {/* Search Bar */}
-            <div className="relative mb-4">
+            <form action="/search" method="get" className="relative mb-4">
               <input
                 type="text"
+                name="q"
                 placeholder="SEARCH..."
                 className="w-full px-4 py-2 border-2 border-black bg-white uppercase font-bold text-sm placeholder:text-[--color-gray] focus:outline-none focus:ring-0"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[--color-gray]" />
-            </div>
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Search">
+                <Search className="w-5 h-5 text-[--color-gray]" />
+              </button>
+            </form>
 
             {/* Topics */}
             <div className="mb-4">

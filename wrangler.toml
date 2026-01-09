@@ -1,0 +1,28 @@
+name = "feitewen"
+compatibility_date = "2024-01-01"
+
+# D1 Database bindings
+# Test database for development
+[[d1_databases]]
+binding = "DB"
+database_name = "feitewen-test"
+database_id = "test-db-id" # Will be replaced after creating DB
+
+# Uncomment for production after testing
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "feitewen-prod"
+# database_id = "prod-db-id"
+
+# Cron trigger for Notion → D1 sync
+# Runs every 10 minutes
+[triggers]
+crons = ["*/10 * * * *"]
+
+# Environment variables
+[vars]
+ENVIRONMENT = "test"
+
+# Secrets (set via wrangler secret put)
+# NOTION_API_KEY - set this via: wrangler secret put NOTION_API_KEY
+# NOTION_DATABASE_ID - set this via: wrangler secret put NOTION_DATABASE_ID
