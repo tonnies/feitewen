@@ -1,4 +1,4 @@
-import { cn } from "../lib/utils";
+import { cn, getTopicColor } from "../lib/utils";
 
 interface ArticleCardProps {
   title: string;
@@ -42,7 +42,10 @@ export default function ArticleCard({
               {topics.map((topic) => (
                 <span
                   key={topic}
-                  className="px-2 py-1 border-2 border-black bg-[--color-cream] text-xs uppercase font-bold break-words"
+                  className={cn(
+                    "px-2 py-1 border-2 text-xs uppercase font-bold break-words",
+                    getTopicColor(topic)
+                  )}
                 >
                   {topic}
                 </span>
