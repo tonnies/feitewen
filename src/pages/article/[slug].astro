@@ -5,6 +5,9 @@ import NotionBlocks from '../../components/NotionBlocks';
 import ArticleCard from '../../components/ArticleCard';
 import { getArticleBySlug, getRelatedArticles, TOPICS } from '../../lib/db-fetch';
 
+// Get D1 database from Cloudflare Workers runtime
+const db = Astro.locals.runtime.env.DB;
+
 // SSR mode - no getStaticPaths needed
 const { slug } = Astro.params;
 
@@ -12,7 +15,7 @@ if (!slug) {
   return Astro.redirect('/');
 }
 
-const article = await getArticleBySlug(slug as string);
+const article = await getArticleBySlug(db, slug as string);
 
 if (!article) {
   return Astro.redirect('/');
@@ -25,7 +28,7 @@ const formattedDate = new Date(article.publishDate).toLocaleDateString("en-US", 
 });
 
 // Fetch related articles based on shared topics
-const relatedArticles = await getRelatedArticles(slug as string, 3);
+const relatedArticles = await getRelatedArticles(db, slug as string, 3);
 ---
 
 <Layout title={`${article.title} - Feite Wen`} description={article.excerpt}>

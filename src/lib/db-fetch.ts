@@ -17,25 +17,6 @@ export interface Article {
   coverImage?: string;
 }
 
-// Get D1 database from Astro runtime
-function getDB(): D1Database {
-  // @ts-ignore - Astro locals includes runtime from Cloudflare Workers
-  if (typeof Astro !== 'undefined' && Astro?.locals?.runtime?.env?.DB) {
-    return Astro.locals.runtime.env.DB;
-  }
-
-  // Log detailed error for debugging
-  console.error('D1 database not available', {
-    hasAstro: typeof Astro !== 'undefined',
-    hasLocals: typeof Astro !== 'undefined' && !!Astro?.locals,
-    hasRuntime: typeof Astro !== 'undefined' && !!Astro?.locals?.runtime,
-    hasEnv: typeof Astro !== 'undefined' && !!Astro?.locals?.runtime?.env,
-    hasDB: typeof Astro !== 'undefined' && !!Astro?.locals?.runtime?.env?.DB,
-  });
-
-  throw new Error('D1 database not available. Check that DB binding is configured in wrangler.jsonc');
-}
-
 // Helper to parse JSON fields
 function parseArticleRow(row: any): Article {
   return {
@@ -57,12 +38,12 @@ function parseArticleRow(row: any): Article {
  * Get published articles with optional topic filter and pagination
  */
 export async function getPublishedArticles(
+  db: D1Database,
   topic?: string,
   pageSize: number = 12,
   startCursor?: string
 ): Promise<{ articles: Article[]; hasMore: boolean; nextCursor: string | null }> {
   try {
-    const db = getDB();
 
     // Build query with optional topic filter
     let query = `
@@ -119,9 +100,8 @@ export async function getPublishedArticles(
 /**
  * Get a single article by slug
  */
-export async function getArticleBySlug(slug: string): Promise<Article | null> {
+export async function getArticleBySlug(db: D1Database, slug: string): Promise<Article | null> {
   try {
-    const db = getDB();
 
     const result = await db
       .prepare(`
@@ -150,12 +130,12 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
  * Uses full-text search (FTS) for fast searching across title, excerpt, and why_it_matters
  */
 export async function searchArticles(
+  db: D1Database,
   query: string,
   pageSize: number = 12,
   offset: number = 0
 ): Promise<{ articles: Article[]; hasMore: boolean; total: number }> {
   try {
-    const db = getDB();
 
     // Sanitize query for FTS5
     const sanitizedQuery = query.trim().replace(/[^\w\s]/g, '');
@@ -215,11 +195,11 @@ export async function searchArticles(
  * Excludes the current article
  */
 export async function getRelatedArticles(
+  db: D1Database,
   articleSlug: string,
   limit: number = 3
 ): Promise<Article[]> {
   try {
-    const db = getDB();
 
     // First, get the current article's topics
     const currentArticle = await db
@@ -267,9 +247,8 @@ export async function getRelatedArticles(
 /**
  * Get all unique topics from published articles
  */
-export async function getAllTopics(): Promise<string[]> {
+export async function getAllTopics(db: D1Database): Promise<string[]> {
   try {
-    const db = getDB();
 
     const result = await db
       .prepare('SELECT DISTINCT topics FROM articles WHERE status = "Published"')
@@ -294,9 +273,8 @@ export async function getAllTopics(): Promise<string[]> {
 /**
  * Get article count by topic
  */
-export async function getArticleCountByTopic(): Promise<Record<string, number>> {
+export async function getArticleCountByTopic(db: D1Database): Promise<Record<string, number>> {
   try {
-    const db = getDB();
 
     const result = await db
       .prepare('SELECT topics FROM articles WHERE status = "Published"')
