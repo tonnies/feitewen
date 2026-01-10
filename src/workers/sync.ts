@@ -16,6 +16,7 @@ interface NotionArticle {
   slug: string;
   excerpt: string;
   publishDate: string;
+  lastEditedTime: string;
   author: string[];
   topics: string[];
   whyItMatters: string;
@@ -150,6 +151,7 @@ function extractArticleData(page: any): Omit<NotionArticle, 'content'> {
     slug,
     excerpt,
     publishDate,
+    lastEditedTime: page.last_edited_time,
     author,
     topics,
     whyItMatters,
@@ -159,22 +161,39 @@ function extractArticleData(page: any): Omit<NotionArticle, 'content'> {
 }
 
 // Fetch all published articles from Notion
-async function fetchPublishedArticlesFromNotion(env: Env): Promise<NotionArticle[]> {
+async function fetchPublishedArticlesFromNotion(env: Env, lastSyncTimestamp?: string): Promise<NotionArticle[]> {
   const articles: NotionArticle[] = [];
   let hasMore = true;
   let startCursor: string | undefined = undefined;
 
   while (hasMore) {
+    // Build filter - combine Status and Last Edited Time filters
+    const filters: any[] = [
+      {
+        property: "Status",
+        status: {
+          equals: "Published",
+        },
+      }
+    ];
+
+    // Add incremental sync filter if lastSyncTimestamp is provided
+    if (lastSyncTimestamp) {
+      filters.push({
+        timestamp: "last_edited_time",
+        last_edited_time: {
+          on_or_after: lastSyncTimestamp,
+        },
+      });
+    }
+
     const response = await notionFetch(
       `/databases/${env.NOTION_DATABASE_ID}/query`,
       env.NOTION_API_KEY,
       {
-        filter: {
-          property: "Status",
-          status: {
-            equals: "Published",
-          },
-        },
+        filter: filters.length > 1 ? {
+          and: filters,
+        } : filters[0],
         sorts: [
           {
             property: "Publish Date",
@@ -247,6 +266,7 @@ async function syncArticlesToD1(articles: NotionArticle[], db: D1Database): Prom
             excerpt = ?,
             content = ?,
             publish_date = ?,
+            last_edited_time = ?,
             author = ?,
             topics = ?,
             why_it_matters = ?,
@@ -261,6 +281,7 @@ async function syncArticlesToD1(articles: NotionArticle[], db: D1Database): Prom
         article.excerpt,
         JSON.stringify(article.content),
         article.publishDate,
+        article.lastEditedTime,
         JSON.stringify(article.author),
         JSON.stringify(article.topics),
         article.whyItMatters,
@@ -275,9 +296,9 @@ async function syncArticlesToD1(articles: NotionArticle[], db: D1Database): Prom
       // Insert new article
       await db.prepare(`
         INSERT INTO articles (
-          id, title, slug, excerpt, content, publish_date, author, topics,
+          id, title, slug, excerpt, content, publish_date, last_edited_time, author, topics,
           why_it_matters, status, cover_image, created_at, updated_at, synced_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         article.id,
         article.title,
@@ -285,6 +306,7 @@ async function syncArticlesToD1(articles: NotionArticle[], db: D1Database): Prom
         article.excerpt,
         JSON.stringify(article.content),
         article.publishDate,
+        article.lastEditedTime,
         JSON.stringify(article.author),
         JSON.stringify(article.topics),
         article.whyItMatters,
@@ -311,26 +333,65 @@ async function syncArticlesToD1(articles: NotionArticle[], db: D1Database): Prom
 }
 
 // Main sync function
-async function performSync(env: Env): Promise<Response> {
+async function performSync(env: Env, fullSync: boolean = false): Promise<Response> {
   const startTime = Date.now();
+  const syncTimestamp = new Date().toISOString();
 
   try {
-    console.log('Starting Notion → D1 sync...');
+    console.log(`Starting Notion → D1 ${fullSync ? 'FULL' : 'incremental'} sync...`);
 
-    // Fetch all published articles from Notion
-    const articles = await fetchPublishedArticlesFromNotion(env);
-    console.log(`Fetched ${articles.length} articles from Notion`);
+    // Get last sync timestamp from database (for incremental sync)
+    let lastSyncTimestamp: string | undefined = undefined;
+    if (!fullSync) {
+      const syncMeta = await env.DB
+        .prepare('SELECT last_sync_timestamp FROM sync_metadata WHERE id = 1')
+        .first();
+
+      if (syncMeta) {
+        lastSyncTimestamp = (syncMeta as any).last_sync_timestamp;
+        console.log(`Last sync timestamp: ${lastSyncTimestamp}`);
+      } else {
+        // No previous sync, do a full sync
+        console.log('No previous sync found, performing full sync');
+        fullSync = true;
+      }
+    }
+
+    // Fetch articles from Notion (filtered by last_edited_time if incremental)
+    const articles = await fetchPublishedArticlesFromNotion(
+      env,
+      fullSync ? undefined : lastSyncTimestamp
+    );
+    console.log(`Fetched ${articles.length} ${fullSync ? 'total' : 'changed'} articles from Notion`);
 
     // Sync to D1
     const stats = await syncArticlesToD1(articles, env.DB);
+
+    // Update sync metadata
+    await env.DB.prepare(`
+      UPDATE sync_metadata
+      SET last_sync_timestamp = ?,
+          last_sync_completed_at = ?,
+          total_articles_synced = ?,
+          sync_type = ?
+      WHERE id = 1
+    `).bind(
+      syncTimestamp,
+      Date.now(),
+      articles.length,
+      fullSync ? 'full' : 'incremental'
+    ).run();
 
     const duration = Date.now() - startTime;
 
     const result = {
       success: true,
+      sync_type: fullSync ? 'full' : 'incremental',
       duration: `${duration}ms`,
       stats,
-      timestamp: new Date().toISOString(),
+      last_sync_timestamp: lastSyncTimestamp,
+      new_sync_timestamp: syncTimestamp,
+      timestamp: syncTimestamp,
     };
 
     console.log('Sync completed:', result);
@@ -359,9 +420,49 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // Manual sync trigger endpoint
+    // Manual incremental sync trigger endpoint
     if (url.pathname === '/sync' && request.method === 'POST') {
-      return performSync(env);
+      return performSync(env, false); // Incremental sync
+    }
+
+    // Manual full sync trigger endpoint
+    if (url.pathname === '/sync/full' && request.method === 'POST') {
+      return performSync(env, true); // Full sync
+    }
+
+    // Get sync status endpoint
+    if (url.pathname === '/sync/status' && request.method === 'GET') {
+      try {
+        const syncMeta = await env.DB
+          .prepare('SELECT * FROM sync_metadata WHERE id = 1')
+          .first();
+
+        if (!syncMeta) {
+          return new Response(JSON.stringify({
+            status: 'no_sync_yet',
+            message: 'No sync has been performed yet'
+          }), {
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+
+        const meta = syncMeta as any;
+        return new Response(JSON.stringify({
+          last_sync_timestamp: meta.last_sync_timestamp,
+          last_sync_completed_at: new Date(meta.last_sync_completed_at).toISOString(),
+          total_articles_synced: meta.total_articles_synced,
+          sync_type: meta.sync_type,
+        }, null, 2), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // Health check endpoint
@@ -374,9 +475,9 @@ export default {
     return new Response('Not Found', { status: 404 });
   },
 
-  // Cron trigger handler
+  // Cron trigger handler (uses incremental sync by default)
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log('Cron triggered at:', new Date(event.scheduledTime).toISOString());
-    ctx.waitUntil(performSync(env));
+    ctx.waitUntil(performSync(env, false)); // Incremental sync
   },
 };
