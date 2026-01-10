@@ -186,14 +186,28 @@ async function fetchPublishedArticlesFromNotion(env: Env): Promise<NotionArticle
       }
     );
 
-    // Process each page
-    for (const page of response.results) {
-      const articleData = extractArticleData(page);
-      const content = await fetchAllBlocks(page.id, env.NOTION_API_KEY);
+    // Process each page - fetch article metadata first
+    const articlesMetadata = response.results.map(page => ({
+      data: extractArticleData(page),
+      pageId: page.id,
+    }));
 
-      articles.push({
-        ...articleData,
-        content,
+    // Fetch blocks in parallel (batched to avoid overwhelming Notion API)
+    const BATCH_SIZE = 5; // Fetch 5 articles' content at a time
+    for (let i = 0; i < articlesMetadata.length; i += BATCH_SIZE) {
+      const batch = articlesMetadata.slice(i, i + BATCH_SIZE);
+
+      // Fetch all blocks for this batch in parallel
+      const contents = await Promise.all(
+        batch.map(item => fetchAllBlocks(item.pageId, env.NOTION_API_KEY))
+      );
+
+      // Add completed articles to the array
+      batch.forEach((item, idx) => {
+        articles.push({
+          ...item.data,
+          content: contents[idx],
+        });
       });
     }
 
